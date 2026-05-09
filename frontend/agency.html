@@ -1,0 +1,106 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agency dashboard — RentiGo</title>
+<link rel="stylesheet" href="styles.css">
+</head><body>
+<script src="data.js"></script>
+<script src="auth.js"></script>
+<script>if(!Auth.require("agency"))throw new Error("blocked");</script>
+<script>
+let bookings = JSON.parse(JSON.stringify(BOOKINGS));
+let fleet = JSON.parse(JSON.stringify(VEHICLES));
+
+function stats(){
+  return [
+    {label:"Total fleet", value:fleet.length, icon:ICON.car},
+    {label:"Active rentals", value:bookings.filter(b=>b.status==="active").length, icon:ICON.trend},
+    {label:"Pending approvals", value:bookings.filter(b=>b.status==="pending").length, icon:ICON.cal},
+    {label:"Revenue (mo)", value:fmt(bookings.reduce((a,b)=>a+b.total,0)), icon:ICON.rupee},
+  ];
+}
+function statsHTML(){return stats().map(s=>`<div class="stat"><div class="stat-top"><div><p class="l">${s.label}</p><p class="v">${s.value}</p></div><div class="ico">${s.icon}</div></div></div>`).join("")}
+
+function bookingsHTML(){
+  return `<table><thead><tr><th>Customer</th><th>Vehicle</th><th>Dates</th><th>Total</th><th>Status</th><th class="text-right">Actions</th></tr></thead><tbody>
+    ${bookings.map(b=>`<tr>
+      <td style="font-weight:600">${b.customer}</td><td>${b.vehicleName}</td>
+      <td class="text-muted">${b.startDate} → ${b.endDate}</td>
+      <td>${fmt(b.total)}</td><td><span class="badge">${b.status}</span></td>
+      <td class="text-right">${b.status==="pending"?
+        `<button class="btn btn-primary btn-sm" onclick="updateStatus('${b.id}','approved')">${ICON.check}</button>
+         <button class="btn btn-outline btn-sm" onclick="updateStatus('${b.id}','rejected')">${ICON.x}</button>`
+        :'<span class="text-muted" style="font-size:13px">—</span>'}</td>
+    </tr>`).join("")}
+  </tbody></table>`;
+}
+function fleetHTML(){
+  return `<div class="fleet-grid">${fleet.map(v=>`
+    <div class="fleet-card">
+      <img src="${v.image}" alt="${v.name}">
+      <div class="body">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div><p class="text-muted" style="font-size:12px;margin:0">${v.brand}</p><h3 style="margin:2px 0;font-size:16px">${v.name}</h3></div>
+          <span class="badge ${v.available?'badge-primary':''}">${v.available?'Available':'Blocked'}</span>
+        </div>
+        <p style="margin:8px 0"><span class="price">${fmt(v.pricePerDay)}</span><small class="text-muted">/day</small></p>
+        <button class="btn btn-outline btn-sm" style="width:100%" onclick="toggleAvail('${v.id}')">${ICON.wrench} ${v.available?'Block for maintenance':'Mark available'}</button>
+      </div>
+    </div>`).join("")}</div>`;
+}
+
+const main = `
+<div class="container" style="padding:40px 24px">
+  <div class="flex-between" style="margin-bottom:32px">
+    <div><h1 style="font-size:32px;margin:0">Agency dashboard</h1><p class="text-muted" style="margin-top:6px">Manage your fleet and bookings</p></div>
+    <button class="btn btn-primary" onclick="document.getElementById('add-modal').classList.add('open')">${ICON.plus} Add vehicle</button>
+  </div>
+  <div class="stats" id="stats">${statsHTML()}</div>
+  <div class="tabs">
+    <button data-tab="bookings" class="active">Bookings</button>
+    <button data-tab="fleet">My fleet</button>
+  </div>
+  <div id="pane-bookings" class="tab-pane active">${bookingsHTML()}</div>
+  <div id="pane-fleet" class="tab-pane">${fleetHTML()}</div>
+</div>
+<div class="modal-bg" id="add-modal">
+  <div class="modal">
+    <h3>Add new vehicle</h3>
+    <div class="form-stack">
+      <input class="input" placeholder="Vehicle number (e.g. KA01AB1234)">
+      <input class="input" placeholder="Brand"><input class="input" placeholder="Model">
+      <div class="row-2">
+        <select class="select"><option>Type</option><option>2-Wheeler</option><option>4-Wheeler</option></select>
+        <select class="select"><option>Fuel</option><option>Petrol</option><option>Diesel</option><option>Electric</option></select>
+      </div>
+      <div class="row-3">
+        <input class="input" type="number" placeholder="₹/day"><input class="input" type="number" placeholder="₹/week"><input class="input" type="number" placeholder="₹/month">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="document.getElementById('add-modal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="toast('Vehicle submitted for review');document.getElementById('add-modal').classList.remove('open')">Submit</button>
+    </div>
+  </div>
+</div>`;
+mountLayout("agency.html", main);
+
+document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+  document.querySelectorAll(".tab-pane").forEach(p=>p.classList.remove("active"));
+  document.getElementById("pane-"+b.dataset.tab).classList.add("active");
+}));
+
+window.updateStatus = (id, st)=>{
+  bookings = bookings.map(b=>b.id===id?{...b,status:st}:b);
+  document.getElementById("pane-bookings").innerHTML = bookingsHTML();
+  document.getElementById("stats").innerHTML = statsHTML();
+  toast("Booking "+st);
+};
+window.toggleAvail = (id)=>{
+  fleet = fleet.map(v=>v.id===id?{...v,available:!v.available}:v);
+  document.getElementById("pane-fleet").innerHTML = fleetHTML();
+  document.getElementById("stats").innerHTML = statsHTML();
+};
+document.getElementById("add-modal").addEventListener("click",e=>{if(e.target.id==="add-modal")e.currentTarget.classList.remove("open")});
+</script>
+</body></html>

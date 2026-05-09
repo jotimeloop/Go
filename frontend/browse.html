@@ -1,0 +1,89 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Browse vehicles — RentiGo</title>
+<meta name="description" content="Search, filter and rent bikes and cars across India.">
+<link rel="stylesheet" href="styles.css">
+</head><body>
+<script src="data.js"></script>
+<script src="auth.js"></script>
+<script>
+const main = `
+<div class="container browse">
+  <aside class="filters">
+    <h2>${ICON.sliders} Filters</h2>
+    <div class="filter-group">
+      <label>Search</label>
+      <input id="f-q" class="input" placeholder="Brand or model">
+    </div>
+    <div class="filter-group">
+      <label>Vehicle type</label>
+      <div class="toggle-group" data-group="type">
+        <button data-val="all" class="active">All</button><button data-val="2W">2W</button><button data-val="4W">4W</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Duration</label>
+      <div class="toggle-group" data-group="duration">
+        <button data-val="daily" class="active">Day</button><button data-val="weekly">Week</button><button data-val="monthly">Month</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>City</label>
+      <select id="f-city" class="select"><option value="all">All cities</option>${CITIES.map(c=>`<option>${c}</option>`).join("")}</select>
+    </div>
+    <div class="filter-group">
+      <label>Fuel</label>
+      <select id="f-fuel" class="select"><option value="all">Any fuel</option><option>Petrol</option><option>Diesel</option><option>Electric</option><option>Hybrid</option></select>
+    </div>
+    <div class="filter-group">
+      <div class="range-row"><span style="font-weight:600">Max price/day</span><span id="f-price-l" class="text-muted">₹7,000</span></div>
+      <input id="f-price" type="range" min="0" max="10000" step="250" value="7000">
+    </div>
+    <button class="btn btn-outline" style="width:100%" id="f-reset">Reset</button>
+  </aside>
+  <div>
+    <div style="margin-bottom:24px">
+      <h1 style="font-size:32px;margin:0">Find your ride</h1>
+      <p id="count" class="text-muted" style="margin-top:6px"></p>
+    </div>
+    <div id="results" class="vgrid"></div>
+  </div>
+</div>`;
+mountLayout("browse.html", main);
+
+const state = { q:"", type:"all", fuel:"all", city:"all", price:7000 };
+function render(){
+  const list = VEHICLES.filter(v=>{
+    if(state.q && !`${v.brand} ${v.name}`.toLowerCase().includes(state.q.toLowerCase())) return false;
+    if(state.type!=="all" && v.type!==state.type) return false;
+    if(state.fuel!=="all" && v.fuel!==state.fuel) return false;
+    if(state.city!=="all" && v.city!==state.city) return false;
+    if(v.pricePerDay > state.price) return false;
+    return true;
+  });
+  document.getElementById("count").textContent = `${list.length} vehicles available`;
+  const r = document.getElementById("results");
+  r.innerHTML = list.length ? list.map(vehicleCard).join("") : `<div class="empty">No vehicles match these filters.</div>`;
+  if(!list.length) r.className=""; else r.className="vgrid";
+}
+document.getElementById("f-q").addEventListener("input",e=>{state.q=e.target.value;render()});
+document.getElementById("f-city").addEventListener("change",e=>{state.city=e.target.value;render()});
+document.getElementById("f-fuel").addEventListener("change",e=>{state.fuel=e.target.value;render()});
+document.getElementById("f-price").addEventListener("input",e=>{state.price=+e.target.value;document.getElementById("f-price-l").textContent="₹"+state.price.toLocaleString("en-IN");render()});
+document.querySelectorAll(".toggle-group").forEach(g=>{
+  g.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+    g.querySelectorAll("button").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+    if(g.dataset.group==="type"){state.type=b.dataset.val;render()}
+  });
+});
+document.getElementById("f-reset").addEventListener("click",()=>{
+  state.q="";state.type="all";state.fuel="all";state.city="all";state.price=7000;
+  document.getElementById("f-q").value="";document.getElementById("f-city").value="all";
+  document.getElementById("f-fuel").value="all";document.getElementById("f-price").value=7000;
+  document.getElementById("f-price-l").textContent="₹7,000";
+  document.querySelectorAll('[data-group="type"] button').forEach(b=>b.classList.toggle("active",b.dataset.val==="all"));
+  render();
+});
+render();
+</script>
+</body></html>

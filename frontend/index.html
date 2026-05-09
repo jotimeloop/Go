@@ -1,0 +1,191 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RentiGo — Rent two & four wheelers, instantly</title>
+<meta name="description" content="Book bikes and cars by the day, week or month. Real-time availability across 7+ cities.">
+<link rel="stylesheet" href="styles.css">
+</head><body>
+<script src="data.js"></script>
+<script src="auth.js"></script>
+<script>
+const u = Auth.user();
+const role = u?.role || null;
+
+/* ---------- PUBLIC LANDING (no auth) ---------- */
+function publicHome(){
+  const featured = VEHICLES.slice(0,4).map(vehicleCard).join("");
+  return `
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <span class="chip">${ICON.zap} Instant booking · No paperwork</span>
+        <h1>Rent any vehicle.<br><span class="gradient-text">Anywhere, anytime.</span></h1>
+        <p class="lead">From scooters to SUVs — choose daily, weekly or monthly rentals across India. Real-time availability, transparent pricing.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px">
+          <a href="browse.html" class="btn btn-primary btn-lg">Browse vehicles ${ICON.arrow}</a>
+          <a href="register.html" class="btn btn-outline btn-lg">Create account</a>
+        </div>
+        <div class="hero-stats">
+          <div><div class="n">10K+</div><div class="l">Vehicles</div></div>
+          <div><div class="n">50K+</div><div class="l">Happy renters</div></div>
+          <div><div class="n">7</div><div class="l">Cities</div></div>
+        </div>
+      </div>
+      <div><img src="assets/hero.jpg" alt="Cars and bikes for rent" class="hero-img"></div>
+    </div>
+  </section>
+  <section class="block container">
+    <div class="cat-grid">
+      <a href="browse.html" class="cat"><div class="cat-icon">${ICON.car}</div><h3>Four-Wheelers</h3><p>Hatchbacks, SUVs, premium sedans</p><span class="more">Explore →</span></a>
+      <a href="browse.html" class="cat"><div class="cat-icon">${ICON.bike}</div><h3>Two-Wheelers</h3><p>Scooters, cruisers, sport bikes</p><span class="more">Explore →</span></a>
+    </div>
+  </section>
+  <section class="block container">
+    <div class="flex-between" style="margin-bottom:24px">
+      <div><h2 class="section-title">Featured rides</h2><p class="section-sub">Top-rated vehicles available now.</p></div>
+      <a href="browse.html" class="btn btn-ghost">See all →</a>
+    </div>
+    <div class="vgrid">${featured}</div>
+  </section>
+  <section class="block container">
+    <h2 class="section-title" style="text-align:center">How it works</h2>
+    <div class="how">
+      <div class="how-item"><div class="ico">${ICON.pin}</div><h3>1. Find</h3><p style="color:var(--muted);font-size:14px;margin:8px 0 0">Search by city, vehicle type, fuel and price.</p></div>
+      <div class="how-item"><div class="ico">${ICON.cal}</div><h3>2. Book</h3><p style="color:var(--muted);font-size:14px;margin:8px 0 0">Pick your dates — daily, weekly or monthly.</p></div>
+      <div class="how-item"><div class="ico">${ICON.shield}</div><h3>3. Drive</h3><p style="color:var(--muted);font-size:14px;margin:8px 0 0">Get instant confirmation and hit the road.</p></div>
+    </div>
+  </section>
+  <section class="block container">
+    <div class="cta-box">
+      <h2>Ready to ride?</h2>
+      <p style="margin:0 auto;max-width:480px;opacity:.9">Sign up free and book your first ride in minutes.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:20px">
+        <a href="register.html" class="btn btn-secondary btn-lg">Create account</a>
+        <a href="login.html" class="btn btn-outline btn-lg" style="color:#fff;border-color:#fff">Sign in</a>
+      </div>
+    </div>
+  </section>`;
+}
+
+/* ---------- CUSTOMER HOME ---------- */
+function customerHome(){
+  const recent = VEHICLES.slice(0,4).map(vehicleCard).join("");
+  const myBookings = BOOKINGS.slice(0,3);
+  return `
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <span class="chip">${ICON.zap} Welcome back, ${u.name.split(" ")[0]}</span>
+        <h1>Where to <span class="gradient-text">next?</span></h1>
+        <p class="lead">Find your perfect ride in seconds. Browse by city, type and budget.</p>
+        <form action="browse.html" class="search-row" style="display:grid;gap:10px;grid-template-columns:1fr 1fr auto;max-width:560px;margin-top:14px">
+          <select class="select" name="city"><option value="">Any city</option>${CITIES.map(c=>`<option>${c}</option>`).join("")}</select>
+          <select class="select" name="type"><option value="">All vehicles</option><option>2-Wheeler</option><option>4-Wheeler</option></select>
+          <button class="btn btn-primary">${ICON.search||""} Search</button>
+        </form>
+      </div>
+      <div><img src="assets/hero.jpg" alt="Pick your ride" class="hero-img"></div>
+    </div>
+  </section>
+  <section class="block container">
+    <div class="flex-between" style="margin-bottom:24px">
+      <div><h2 class="section-title">Recommended for you</h2><p class="section-sub">Picked based on popular rentals near you.</p></div>
+      <a href="browse.html" class="btn btn-ghost">Browse all →</a>
+    </div>
+    <div class="vgrid">${recent}</div>
+  </section>
+  <section class="block container">
+    <div class="flex-between" style="margin-bottom:24px">
+      <div><h2 class="section-title">Your recent bookings</h2><p class="section-sub">Pick up where you left off.</p></div>
+      <a href="bookings.html" class="btn btn-ghost">View all →</a>
+    </div>
+    <div class="vgrid">
+      ${myBookings.length ? myBookings.map(b=>`
+        <div class="vcard"><div class="body">
+          <p class="text-muted" style="font-size:12px;margin:0">${b.startDate} → ${b.endDate}</p>
+          <h3 style="margin:6px 0;font-size:16px">${b.vehicleName}</h3>
+          <p style="margin:0"><span class="price">${fmt(b.total)}</span></p>
+          <span class="badge" style="margin-top:10px;display:inline-block">${b.status}</span>
+        </div></div>`).join("") : `<p class="text-muted">No bookings yet — <a href="browse.html">find a ride</a>.</p>`}
+    </div>
+  </section>`;
+}
+
+/* ---------- AGENCY HOME ---------- */
+function agencyHome(){
+  const fleetCount = VEHICLES.length;
+  const active = BOOKINGS.filter(b=>b.status==="active").length;
+  const pending = BOOKINGS.filter(b=>b.status==="pending").length;
+  const revenue = BOOKINGS.reduce((a,b)=>a+b.total,0);
+  return `
+  <section class="hero">
+    <div class="container" style="padding:48px 24px">
+      <span class="chip">${ICON.car} Agency · ${u.name}</span>
+      <h1 style="margin-top:12px">Your fleet at a <span class="gradient-text">glance</span></h1>
+      <p class="lead">Manage vehicles, approve bookings and track revenue from one place.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:16px">
+        <a href="agency.html" class="btn btn-primary btn-lg">${ICON.trend} Open dashboard</a>
+        <a href="agency.html" class="btn btn-outline btn-lg">${ICON.plus} Add vehicle</a>
+      </div>
+    </div>
+  </section>
+  <section class="block container">
+    <div class="stats">
+      <div class="stat"><div class="stat-top"><div><p class="l">Total fleet</p><p class="v">${fleetCount}</p></div><div class="ico">${ICON.car}</div></div></div>
+      <div class="stat"><div class="stat-top"><div><p class="l">Active rentals</p><p class="v">${active}</p></div><div class="ico">${ICON.trend}</div></div></div>
+      <div class="stat"><div class="stat-top"><div><p class="l">Pending approvals</p><p class="v">${pending}</p></div><div class="ico">${ICON.cal}</div></div></div>
+      <div class="stat"><div class="stat-top"><div><p class="l">Revenue (mo)</p><p class="v">${fmt(revenue)}</p></div><div class="ico">${ICON.rupee}</div></div></div>
+    </div>
+  </section>
+  <section class="block container">
+    <h2 class="section-title">Quick actions</h2>
+    <div class="cat-grid" style="margin-top:16px">
+      <a href="agency.html" class="cat"><div class="cat-icon">${ICON.cal}</div><h3>Pending bookings</h3><p>${pending} request(s) awaiting your approval</p><span class="more">Review →</span></a>
+      <a href="agency.html" class="cat"><div class="cat-icon">${ICON.wrench||ICON.car}</div><h3>Manage fleet</h3><p>Block, unblock or update vehicle availability</p><span class="more">Open fleet →</span></a>
+    </div>
+  </section>`;
+}
+
+/* ---------- ADMIN HOME ---------- */
+function adminHome(){
+  const totalUsers = (USERS||[]).length || 128;
+  const totalAgencies = (USERS||[]).filter(x=>x.role==="agency").length || 14;
+  const totalVehicles = VEHICLES.length;
+  const totalBookings = BOOKINGS.length;
+  return `
+  <section class="hero">
+    <div class="container" style="padding:48px 24px">
+      <span class="chip">${ICON.shield} Admin · ${u.name}</span>
+      <h1 style="margin-top:12px">Platform <span class="gradient-text">overview</span></h1>
+      <p class="lead">Monitor users, agencies and bookings across RentiGo.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:16px">
+        <a href="admin.html" class="btn btn-primary btn-lg">${ICON.trend} Open admin console</a>
+        <a href="browse.html" class="btn btn-outline btn-lg">View public site</a>
+      </div>
+    </div>
+  </section>
+  <section class="block container">
+    <div class="stats">
+      <div class="stat"><div class="stat-top"><div><p class="l">Total users</p><p class="v">${totalUsers}</p></div><div class="ico">${ICON.shield}</div></div></div>
+      <div class="stat"><div class="stat-top"><div><p class="l">Agencies</p><p class="v">${totalAgencies}</p></div><div class="ico">${ICON.car}</div></div></div>
+      <div class="stat"><div class="stat-top"><div><p class="l">Vehicles listed</p><p class="v">${totalVehicles}</p></div><div class="ico">${ICON.bike}</div></div></div>
+      <div class="stat"><div class="stat-top"><div><p class="l">Bookings</p><p class="v">${totalBookings}</p></div><div class="ico">${ICON.cal}</div></div></div>
+    </div>
+  </section>
+  <section class="block container">
+    <h2 class="section-title">Moderation queue</h2>
+    <div class="cat-grid" style="margin-top:16px">
+      <a href="admin.html" class="cat"><div class="cat-icon">${ICON.car}</div><h3>Vehicle approvals</h3><p>Review listings submitted by agencies</p><span class="more">Open →</span></a>
+      <a href="admin.html" class="cat"><div class="cat-icon">${ICON.shield}</div><h3>User management</h3><p>Block, unblock or audit accounts</p><span class="more">Open →</span></a>
+    </div>
+  </section>`;
+}
+
+let main;
+if (!u)                        main = publicHome();
+else if (role === "agency")    main = agencyHome();
+else if (role === "admin")     main = adminHome();
+else                           main = customerHome();
+
+mountLayout("index.html", main);
+</script>
+</body></html>

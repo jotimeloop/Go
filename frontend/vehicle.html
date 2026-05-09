@@ -1,0 +1,97 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vehicle — RentiGo</title>
+<link rel="stylesheet" href="styles.css">
+</head><body>
+<script src="data.js"></script>
+<script src="auth.js"></script>
+<script>
+const id = qs("id");
+const v = VEHICLES.find(x=>x.id===id);
+let main;
+if(!v){
+  main = `<div class="container" style="padding:80px 0;text-align:center">Vehicle not found. <a href="browse.html" style="color:var(--primary);text-decoration:underline">Back to browse</a></div>`;
+  mountLayout("", main);
+} else {
+  document.title = `${v.brand} ${v.name} — RentiGo`;
+  main = `
+<div class="container" style="padding:32px 0">
+  <a href="browse.html" class="back-link">${ICON.back} Back to browse</a>
+  <div class="vehicle-page">
+    <div>
+      <div class="vmain-img"><img src="${v.image}" alt="${v.name}"></div>
+      <div style="margin-top:24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;align-items:flex-start">
+        <div>
+          <p class="text-muted" style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;margin:0">${v.brand} · ${v.year}</p>
+          <h1 style="font-size:30px;margin:4px 0">${v.name}</h1>
+          <div style="display:flex;gap:12px;font-size:14px;color:var(--muted);align-items:center">
+            <span style="display:inline-flex;align-items:center;gap:4px">${ICON.star} ${v.rating}</span><span>·</span>
+            <span style="display:inline-flex;align-items:center;gap:4px">${ICON.pin} ${v.city}</span><span>·</span>
+            <span>by ${v.agency}</span>
+          </div>
+        </div>
+        <span class="badge">${v.type==='2W'?'Two-Wheeler':'Four-Wheeler'}</span>
+      </div>
+      <div class="specs">
+        <div class="spec">${ICON.fuel} ${v.fuel}</div>
+        <div class="spec">${ICON.cog} ${v.transmission}</div>
+        <div class="spec">${ICON.users} ${v.seats} seats</div>
+        <div class="spec">${ICON.shield} Insured</div>
+      </div>
+      <div class="card" style="padding:24px;margin-top:32px">
+        <h2 style="margin:0 0 8px;font-size:18px">About this vehicle</h2>
+        <p style="font-size:14px;color:var(--muted);line-height:1.6;margin:0">
+          The ${v.brand} ${v.name} is a reliable ${v.type==='2W'?'two-wheeler':'four-wheeler'} perfect for both city commutes and weekend getaways.
+          Featuring a ${v.fuel.toLowerCase()} engine and ${v.transmission.toLowerCase()} transmission, it delivers comfort and efficiency in equal measure.
+        </p>
+      </div>
+    </div>
+    <aside class="booking">
+      <div><span class="price" style="font-size:30px">${fmt(v.pricePerDay)}</span><span class="text-muted"> /<span id="b-unit">day</span></span></div>
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px">Rental duration</label>
+        <div class="toggle-group" id="b-dur">
+          <button data-val="daily" class="active">Daily</button><button data-val="weekly">Weekly</button><button data-val="monthly">Monthly</button>
+        </div>
+      </div>
+      <div class="row-2">
+        <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Start</label><input id="b-start" type="date" class="input"></div>
+        <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">End</label><input id="b-end" type="date" class="input"></div>
+      </div>
+      <div class="summary">
+        <div class="row"><span class="text-muted">Base (<span class="b-unit-2">day</span>)</span><span id="b-base">${fmt(v.pricePerDay)}</span></div>
+        <div class="row"><span class="text-muted">Service fee</span><span>₹199</span></div>
+        <div class="row total"><span>Total</span><span id="b-total">${fmt(v.pricePerDay+199)}</span></div>
+      </div>
+      <button id="book-btn" class="btn btn-primary btn-lg" style="width:100%" ${!v.available?'disabled style="opacity:.5"':''}>${ICON.cal} ${v.available?'Request booking':'Currently unavailable'}</button>
+      <p style="text-align:center;font-size:12px;color:var(--muted);margin:0">You won't be charged yet — agency must approve.</p>
+    </aside>
+  </div>
+</div>`;
+  mountLayout("", main);
+
+  const prices = { daily:v.pricePerDay, weekly:v.pricePerWeek, monthly:v.pricePerMonth };
+  const unitLabel = { daily:"day", weekly:"week", monthly:"month" };
+  let dur = "daily";
+  function update(){
+    const p = prices[dur], u = unitLabel[dur];
+    document.querySelector(".price").innerHTML = "₹" + p.toLocaleString("en-IN");
+    document.getElementById("b-unit").textContent = u;
+    document.querySelectorAll(".b-unit-2").forEach(x=>x.textContent=u);
+    document.getElementById("b-base").textContent = "₹" + p.toLocaleString("en-IN");
+    document.getElementById("b-total").textContent = "₹" + (p+199).toLocaleString("en-IN");
+  }
+  document.getElementById("b-dur").addEventListener("click",e=>{
+    const b = e.target.closest("button"); if(!b) return;
+    document.querySelectorAll("#b-dur button").forEach(x=>x.classList.remove("active")); b.classList.add("active");
+    dur = b.dataset.val; update();
+  });
+  document.getElementById("book-btn").addEventListener("click",()=>{
+    const s=document.getElementById("b-start").value, e=document.getElementById("b-end").value;
+    if(!s || !e){toast("Please pick start and end dates","error"); return}
+    toast("Booking request sent! Awaiting approval.");
+    setTimeout(()=>location.href="bookings.html", 800);
+  });
+}
+</script>
+</body></html>

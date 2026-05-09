@@ -1,0 +1,85 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create account — RentiGo</title>
+<link rel="stylesheet" href="styles.css">
+</head><body>
+<script src="data.js"></script>
+<script src="auth.js"></script>
+<script>
+const main = `
+<div class="auth">
+  <div class="auth-card">
+    <div style="text-align:center"><div class="brand-logo" style="margin:0 auto;width:48px;height:48px">${ICON.car}</div></div>
+    <h1>Create your account</h1>
+    <p class="sub">Find and book your next ride in minutes</p>
+
+    <form id="reg-form" class="form-stack">
+      <input class="input" name="name" placeholder="Full name" required minlength="2">
+      <input class="input" name="email" type="email" placeholder="Email" required>
+      <input class="input" name="password" type="password" placeholder="Password (min 6 chars)" minlength="6" required>
+
+      <label style="font-size:13px;font-weight:600;margin-top:6px">I want to</label>
+      <div class="toggle-group" id="role-group">
+        <button type="button" data-val="customer" class="active">Rent vehicles</button>
+        <button type="button" data-val="agency">List my fleet</button>
+      </div>
+      <input type="hidden" name="role" value="customer">
+
+      <fieldset style="border:1px solid var(--border);border-radius:12px;padding:12px 14px">
+        <legend style="font-size:12px;color:var(--muted);padding:0 6px">Quick search preferences (optional)</legend>
+        <div style="display:grid;gap:10px;margin-top:6px">
+          <select class="input" name="prefCity">
+            <option value="">Preferred city</option>
+            ${CITIES.map(c=>`<option>${c}</option>`).join("")}
+          </select>
+          <div class="toggle-group" id="pref-type">
+            <button type="button" data-val="" class="active">Any</button>
+            <button type="button" data-val="2W">2-Wheeler</button>
+            <button type="button" data-val="4W">4-Wheeler</button>
+          </div>
+          <input type="hidden" name="prefType" value="">
+        </div>
+      </fieldset>
+
+      <button class="btn btn-primary" type="submit" style="width:100%">Create account</button>
+      <p id="err" style="color:#dc2626;font-size:13px;text-align:center;display:none"></p>
+    </form>
+    <p style="text-align:center;font-size:13px;color:var(--muted);margin-top:20px">
+      Already have an account? <a href="login.html" style="color:var(--primary);font-weight:600">Sign in</a>
+    </p>
+  </div>
+</div>`;
+mountLayout("", main);
+
+function bindToggle(groupId, hiddenName){
+  const grp = document.getElementById(groupId);
+  grp.addEventListener("click", e=>{
+    const b = e.target.closest("button[data-val]"); if(!b) return;
+    grp.querySelectorAll("button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    document.querySelector(`input[name="${hiddenName}"]`).value = b.dataset.val;
+  });
+}
+bindToggle("role-group","role");
+bindToggle("pref-type","prefType");
+
+document.getElementById("reg-form").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const errEl = document.getElementById("err"); errEl.style.display="none";
+  const body = {
+    name: fd.get("name").trim(),
+    email: fd.get("email").trim().toLowerCase(),
+    password: fd.get("password"),
+    role: fd.get("role"),
+    preferences: { city: fd.get("prefCity")||null, type: fd.get("prefType")||null },
+  };
+  try{
+    const { token, user } = await Auth.api("/auth/register",{method:"POST",body});
+    Auth.save(token, user);
+    toast("Welcome to RentiGo!");
+    location.href = user.role==="agency" ? "agency.html" : "browse.html";
+  }catch(err){ errEl.textContent = err.message || "Sign up failed"; errEl.style.display="block"; }
+});
+</script>
+</body></html>

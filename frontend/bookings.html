@@ -1,0 +1,40 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My bookings — RentiGo</title>
+<link rel="stylesheet" href="styles.css">
+</head><body>
+<script src="data.js"></script>
+<script src="auth.js"></script>
+<script>if(!Auth.require())throw new Error("blocked");</script>
+<script>
+const cls = { pending:"badge-warning", approved:"badge-primary", active:"badge-success", completed:"", rejected:"badge-destructive" };
+const rows = BOOKINGS.map(b=>`
+  <div class="booking-row">
+    <div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
+        <h3>${b.vehicleName}</h3>
+        <span class="badge ${cls[b.status]||''}">${b.status}</span>
+      </div>
+      <div class="booking-meta">
+        <span>${ICON.cal} ${b.startDate} → ${b.endDate}</span>
+        <span>${ICON.pin} ${b.duration}</span>
+        <span>Booking #${b.id}</span>
+      </div>
+    </div>
+    <div class="booking-price">
+      <div class="total">${fmt(b.total)}</div>
+      <a href="vehicle.html?id=${b.vehicleId}" class="btn btn-outline btn-sm" style="margin-top:8px">View vehicle</a>
+    </div>
+  </div>`).join("");
+
+const main = `
+<div class="container" style="max-width:900px;padding:40px 24px">
+  <div class="flex-between" style="margin-bottom:32px">
+    <div><h1 style="font-size:32px;margin:0">My bookings</h1><p class="text-muted" style="margin-top:6px">Track all your past and upcoming rentals.</p></div>
+    <a href="browse.html" class="btn btn-primary">New booking</a>
+  </div>
+  ${rows}
+</div>`;
+mountLayout("bookings.html", main);
+</script>
+</body></html>

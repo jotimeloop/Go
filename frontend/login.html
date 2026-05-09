@@ -1,0 +1,43 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in — RentiGo</title>
+<link rel="stylesheet" href="styles.css">
+</head><body>
+<script src="data.js"></script>
+<script src="auth.js"></script>
+<script>
+const main = `
+<div class="auth">
+  <div class="auth-card">
+    <div style="text-align:center"><div class="brand-logo" style="margin:0 auto;width:48px;height:48px">${ICON.car}</div></div>
+    <h1>Welcome back</h1><p class="sub">Sign in to RentiGo</p>
+    <form id="signin-form" class="form-stack">
+      <input class="input" name="email" type="email" placeholder="Email" required>
+      <input class="input" name="password" type="password" placeholder="Password" minlength="6" required>
+      <button class="btn btn-primary" type="submit" style="width:100%">Sign in</button>
+      <p id="err" style="color:#dc2626;font-size:13px;text-align:center;display:none"></p>
+    </form>
+    <p style="text-align:center;font-size:13px;color:var(--muted);margin-top:20px">
+      No account? <a href="register.html" style="color:var(--primary);font-weight:600">Create one</a>
+    </p>
+    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px">
+      <a href="index.html" style="color:var(--muted)">← Back home</a>
+    </p>
+  </div>
+</div>`;
+mountLayout("", main);
+
+document.getElementById("signin-form").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const errEl = document.getElementById("err"); errEl.style.display="none";
+  try{
+    const { token, user } = await Auth.api("/auth/login",{method:"POST",body:{email:fd.get("email"),password:fd.get("password")}});
+    Auth.save(token, user);
+    toast("Welcome back, " + user.name.split(" ")[0]);
+    const back = sessionStorage.getItem("rentigo_redirect"); sessionStorage.removeItem("rentigo_redirect");
+    location.href = back || (user.role==="admin"?"admin.html":user.role==="agency"?"agency.html":"browse.html");
+  }catch(err){ errEl.textContent = err.message || "Sign in failed"; errEl.style.display="block"; }
+});
+</script>
+</body></html>
